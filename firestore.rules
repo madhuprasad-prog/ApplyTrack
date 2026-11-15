@@ -1,0 +1,433 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function hasFields(data, required, allowed) {
+      return data.keys().hasAll(required) && data.keys().hasOnly(allowed);
+    }
+
+    function validText(data, field, maxLength, allowEmpty) {
+      return data[field] is string
+        && data[field].size() <= maxLength
+        && (allowEmpty || data[field].size() > 0);
+    }
+
+    function validOptionalText(data, field, maxLength) {
+      return !(field in data)
+        || data[field] == null
+        || (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function matchesVerifiedAuthEmail(email) {
+      return !('email_verified' in request.auth.token)
+        || request.auth.token.email_verified != true
+        || ('email' in request.auth.token && email == request.auth.token.email);
+    }
+
+    function createdAndUpdatedAtRequestTime(data) {
+      return data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function updatedAtRequestTime(data, oldData) {
+      return data.createdAt is timestamp
+        && data.createdAt == oldData.createdAt
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function validProfile(data) {
+      return hasFields(
+          data,
+          ['displayName', 'email', 'createdAt', 'updatedAt'],
+          ['displayName', 'email', 'photoURL', 'createdAt', 'updatedAt']
+        )
+        && validText(data, 'displayName', 120, false)
+        && validText(data, 'email', 254, false)
+        && matchesVerifiedAuthEmail(data.email)
+        && validOptionalText(data, 'photoURL', 2048)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validStatus(status) {
+      return status in ['Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected'];
+    }
+
+    function validActivityEntry(event) {
+      return event is map
+        && event.keys().hasAll(['type', 'date'])
+        && event.keys().hasOnly(['id', 'type', 'date', 'fromStatus', 'toStatus'])
+        && (!('id' in event) || (event.id is string && event.id.size() <= 128))
+        && validText(event, 'type', 120, false)
+        && event.date is timestamp
+        && (event.type == 'status_changed'
+          ? event.keys().hasAll(['fromStatus', 'toStatus'])
+            && validStatus(event.fromStatus)
+            && validStatus(event.toStatus)
+            && event.fromStatus != event.toStatus
+          : !('fromStatus' in event) && !('toStatus' in event));
+    }
+
+    function validInitialActivity(activity) {
+      return activity is list
+        && activity.size() == 1
+        && validActivityEntry(activity[0])
+        && activity[0].type != 'status_changed';
+    }
+
+    function preservesActivityPrefix(oldActivity, newActivity) {
+      return (oldActivity.size() <= 0 || newActivity[0] == oldActivity[0])
+        && (oldActivity.size() <= 1 || newActivity[1] == oldActivity[1])
+        && (oldActivity.size() <= 2 || newActivity[2] == oldActivity[2])
+        && (oldActivity.size() <= 3 || newActivity[3] == oldActivity[3])
+        && (oldActivity.size() <= 4 || newActivity[4] == oldActivity[4])
+        && (oldActivity.size() <= 5 || newActivity[5] == oldActivity[5])
+        && (oldActivity.size() <= 6 || newActivity[6] == oldActivity[6])
+        && (oldActivity.size() <= 7 || newActivity[7] == oldActivity[7])
+        && (oldActivity.size() <= 8 || newActivity[8] == oldActivity[8])
+        && (oldActivity.size() <= 9 || newActivity[9] == oldActivity[9])
+        && (oldActivity.size() <= 10 || newActivity[10] == oldActivity[10])
+        && (oldActivity.size() <= 11 || newActivity[11] == oldActivity[11])
+        && (oldActivity.size() <= 12 || newActivity[12] == oldActivity[12])
+        && (oldActivity.size() <= 13 || newActivity[13] == oldActivity[13])
+        && (oldActivity.size() <= 14 || newActivity[14] == oldActivity[14])
+        && (oldActivity.size() <= 15 || newActivity[15] == oldActivity[15])
+        && (oldActivity.size() <= 16 || newActivity[16] == oldActivity[16])
+        && (oldActivity.size() <= 17 || newActivity[17] == oldActivity[17])
+        && (oldActivity.size() <= 18 || newActivity[18] == oldActivity[18])
+        && (oldActivity.size() <= 19 || newActivity[19] == oldActivity[19])
+        && (oldActivity.size() <= 20 || newActivity[20] == oldActivity[20])
+        && (oldActivity.size() <= 21 || newActivity[21] == oldActivity[21])
+        && (oldActivity.size() <= 22 || newActivity[22] == oldActivity[22])
+        && (oldActivity.size() <= 23 || newActivity[23] == oldActivity[23])
+        && (oldActivity.size() <= 24 || newActivity[24] == oldActivity[24])
+        && (oldActivity.size() <= 25 || newActivity[25] == oldActivity[25])
+        && (oldActivity.size() <= 26 || newActivity[26] == oldActivity[26])
+        && (oldActivity.size() <= 27 || newActivity[27] == oldActivity[27])
+        && (oldActivity.size() <= 28 || newActivity[28] == oldActivity[28])
+        && (oldActivity.size() <= 29 || newActivity[29] == oldActivity[29])
+        && (oldActivity.size() <= 30 || newActivity[30] == oldActivity[30])
+        && (oldActivity.size() <= 31 || newActivity[31] == oldActivity[31])
+        && (oldActivity.size() <= 32 || newActivity[32] == oldActivity[32])
+        && (oldActivity.size() <= 33 || newActivity[33] == oldActivity[33])
+        && (oldActivity.size() <= 34 || newActivity[34] == oldActivity[34])
+        && (oldActivity.size() <= 35 || newActivity[35] == oldActivity[35])
+        && (oldActivity.size() <= 36 || newActivity[36] == oldActivity[36])
+        && (oldActivity.size() <= 37 || newActivity[37] == oldActivity[37])
+        && (oldActivity.size() <= 38 || newActivity[38] == oldActivity[38])
+        && (oldActivity.size() <= 39 || newActivity[39] == oldActivity[39])
+        && (oldActivity.size() <= 40 || newActivity[40] == oldActivity[40])
+        && (oldActivity.size() <= 41 || newActivity[41] == oldActivity[41])
+        && (oldActivity.size() <= 42 || newActivity[42] == oldActivity[42])
+        && (oldActivity.size() <= 43 || newActivity[43] == oldActivity[43])
+        && (oldActivity.size() <= 44 || newActivity[44] == oldActivity[44])
+        && (oldActivity.size() <= 45 || newActivity[45] == oldActivity[45])
+        && (oldActivity.size() <= 46 || newActivity[46] == oldActivity[46])
+        && (oldActivity.size() <= 47 || newActivity[47] == oldActivity[47])
+        && (oldActivity.size() <= 48 || newActivity[48] == oldActivity[48])
+        && (oldActivity.size() <= 49 || newActivity[49] == oldActivity[49])
+        && (oldActivity.size() <= 50 || newActivity[50] == oldActivity[50])
+        && (oldActivity.size() <= 51 || newActivity[51] == oldActivity[51])
+        && (oldActivity.size() <= 52 || newActivity[52] == oldActivity[52])
+        && (oldActivity.size() <= 53 || newActivity[53] == oldActivity[53])
+        && (oldActivity.size() <= 54 || newActivity[54] == oldActivity[54])
+        && (oldActivity.size() <= 55 || newActivity[55] == oldActivity[55])
+        && (oldActivity.size() <= 56 || newActivity[56] == oldActivity[56])
+        && (oldActivity.size() <= 57 || newActivity[57] == oldActivity[57])
+        && (oldActivity.size() <= 58 || newActivity[58] == oldActivity[58])
+        && (oldActivity.size() <= 59 || newActivity[59] == oldActivity[59])
+        && (oldActivity.size() <= 60 || newActivity[60] == oldActivity[60])
+        && (oldActivity.size() <= 61 || newActivity[61] == oldActivity[61])
+        && (oldActivity.size() <= 62 || newActivity[62] == oldActivity[62])
+        && (oldActivity.size() <= 63 || newActivity[63] == oldActivity[63])
+        && (oldActivity.size() <= 64 || newActivity[64] == oldActivity[64])
+        && (oldActivity.size() <= 65 || newActivity[65] == oldActivity[65])
+        && (oldActivity.size() <= 66 || newActivity[66] == oldActivity[66])
+        && (oldActivity.size() <= 67 || newActivity[67] == oldActivity[67])
+        && (oldActivity.size() <= 68 || newActivity[68] == oldActivity[68])
+        && (oldActivity.size() <= 69 || newActivity[69] == oldActivity[69])
+        && (oldActivity.size() <= 70 || newActivity[70] == oldActivity[70])
+        && (oldActivity.size() <= 71 || newActivity[71] == oldActivity[71])
+        && (oldActivity.size() <= 72 || newActivity[72] == oldActivity[72])
+        && (oldActivity.size() <= 73 || newActivity[73] == oldActivity[73])
+        && (oldActivity.size() <= 74 || newActivity[74] == oldActivity[74])
+        && (oldActivity.size() <= 75 || newActivity[75] == oldActivity[75])
+        && (oldActivity.size() <= 76 || newActivity[76] == oldActivity[76])
+        && (oldActivity.size() <= 77 || newActivity[77] == oldActivity[77])
+        && (oldActivity.size() <= 78 || newActivity[78] == oldActivity[78])
+        && (oldActivity.size() <= 79 || newActivity[79] == oldActivity[79])
+        && (oldActivity.size() <= 80 || newActivity[80] == oldActivity[80])
+        && (oldActivity.size() <= 81 || newActivity[81] == oldActivity[81])
+        && (oldActivity.size() <= 82 || newActivity[82] == oldActivity[82])
+        && (oldActivity.size() <= 83 || newActivity[83] == oldActivity[83])
+        && (oldActivity.size() <= 84 || newActivity[84] == oldActivity[84])
+        && (oldActivity.size() <= 85 || newActivity[85] == oldActivity[85])
+        && (oldActivity.size() <= 86 || newActivity[86] == oldActivity[86])
+        && (oldActivity.size() <= 87 || newActivity[87] == oldActivity[87])
+        && (oldActivity.size() <= 88 || newActivity[88] == oldActivity[88])
+        && (oldActivity.size() <= 89 || newActivity[89] == oldActivity[89])
+        && (oldActivity.size() <= 90 || newActivity[90] == oldActivity[90])
+        && (oldActivity.size() <= 91 || newActivity[91] == oldActivity[91])
+        && (oldActivity.size() <= 92 || newActivity[92] == oldActivity[92])
+        && (oldActivity.size() <= 93 || newActivity[93] == oldActivity[93])
+        && (oldActivity.size() <= 94 || newActivity[94] == oldActivity[94])
+        && (oldActivity.size() <= 95 || newActivity[95] == oldActivity[95])
+        && (oldActivity.size() <= 96 || newActivity[96] == oldActivity[96])
+        && (oldActivity.size() <= 97 || newActivity[97] == oldActivity[97])
+        && (oldActivity.size() <= 98 || newActivity[98] == oldActivity[98])
+        && (oldActivity.size() <= 99 || newActivity[99] == oldActivity[99]);
+    }
+
+    function validResumeReference(uid, resumeId) {
+      return resumeId == ''
+        || resumeId == null
+        || (resumeId is string
+          && exists(/databases/$(database)/documents/users/$(uid)/resumes/$(resumeId)));
+    }
+
+    function validApplication(data, uid) {
+      return hasFields(
+          data,
+          [
+            'company', 'role', 'location', 'source', 'appliedAt', 'status',
+            'color', 'recruiter', 'recruiterEmail', 'notes', 'resumeId',
+            'activity', 'createdAt', 'updatedAt'
+          ],
+          [
+            'company', 'role', 'location', 'source', 'appliedAt', 'status',
+            'color', 'recruiter', 'recruiterEmail', 'notes', 'resumeId',
+            'activity', 'createdAt', 'updatedAt'
+          ]
+        )
+        && validText(data, 'company', 160, false)
+        && validText(data, 'role', 200, false)
+        && validText(data, 'location', 160, true)
+        && validText(data, 'source', 100, false)
+        && data.appliedAt is timestamp
+        && validStatus(data.status)
+        && validText(data, 'color', 32, true)
+        && validText(data, 'recruiter', 160, true)
+        && validText(data, 'recruiterEmail', 254, true)
+        && validText(data, 'notes', 5000, true)
+        && (data.resumeId == null || data.resumeId is string)
+        && validResumeReference(uid, data.resumeId)
+        && data.activity is list
+        && data.activity.size() <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validStatusChangeEvent(oldData, newData) {
+      let events = newData.activity;
+      return events.size() > 0
+        && events.size() == oldData.activity.size() + 1
+        && preservesActivityPrefix(oldData.activity, events)
+        && validActivityEntry(events[events.size() - 1])
+        && events[events.size() - 1].type == 'status_changed'
+        && events[events.size() - 1].fromStatus == oldData.status
+        && events[events.size() - 1].toStatus == newData.status;
+    }
+
+    function validNonStatusActivityAppend(oldData, newData) {
+      return newData.activity == oldData.activity
+        || (newData.activity.size() == oldData.activity.size() + 1
+          && preservesActivityPrefix(oldData.activity, newData.activity)
+          && validActivityEntry(newData.activity[newData.activity.size() - 1])
+          && newData.activity[newData.activity.size() - 1].type != 'status_changed');
+    }
+
+    function validApplicationActivityUpdate(oldData, newData) {
+      return newData.status == oldData.status
+        ? validNonStatusActivityAppend(oldData, newData)
+        : validStatusChangeEvent(oldData, newData);
+    }
+
+    function applicationExists(uid, applicationId) {
+      return applicationId is string
+        && exists(/databases/$(database)/documents/users/$(uid)/applications/$(applicationId));
+    }
+
+    function validInterview(data, uid) {
+      return hasFields(
+          data,
+          ['applicationId', 'round', 'date', 'mode', 'link', 'notes', 'createdAt', 'updatedAt'],
+          ['applicationId', 'round', 'date', 'mode', 'link', 'notes', 'createdAt', 'updatedAt']
+        )
+        && applicationExists(uid, data.applicationId)
+        && validText(data, 'round', 120, false)
+        && data.date is timestamp
+        && validText(data, 'mode', 60, false)
+        && validText(data, 'link', 2048, true)
+        && (data.link == '' || data.link.matches('^https?://[^ ]+$'))
+        && validText(data, 'notes', 5000, true)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validFollowup(data, uid) {
+      return hasFields(
+          data,
+          ['applicationId', 'date', 'note', 'completed', 'createdAt', 'updatedAt'],
+          ['applicationId', 'date', 'note', 'completed', 'completedAt', 'createdAt', 'updatedAt']
+        )
+        && applicationExists(uid, data.applicationId)
+        && data.date is timestamp
+        && validText(data, 'note', 500, false)
+        && (data.completed is bool
+          && (data.completed
+            ? data.completedAt is timestamp
+            : !('completedAt' in data) || data.completedAt == null))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validResume(data) {
+      return hasFields(
+          data,
+          ['name', 'category', 'sizeBytes', 'createdAt', 'updatedAt'],
+          ['name', 'category', 'sizeBytes', 'createdAt', 'updatedAt']
+        )
+        && validText(data, 'name', 200, false)
+        && validText(data, 'category', 100, false)
+        && data.sizeBytes is int
+        && data.sizeBytes >= 0
+        && data.sizeBytes <= 10485760
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Client-created analysis data is explicitly unverified, never trusted AI output.
+    function validAnalysis(data) {
+      return hasFields(
+          data,
+          ['model', 'promptVersion', 'sourceFingerprint', 'generatedAt', 'summary', 'skills', 'strengths', 'gaps', 'matchScore', 'verificationStatus'],
+          ['model', 'promptVersion', 'sourceFingerprint', 'generatedAt', 'summary', 'skills', 'strengths', 'gaps', 'matchScore', 'verificationStatus']
+        )
+        && data.verificationStatus == 'unverified'
+        && validText(data, 'model', 120, false)
+        && validText(data, 'promptVersion', 120, false)
+        && validText(data, 'sourceFingerprint', 128, false)
+        && data.generatedAt is timestamp
+        && data.generatedAt == request.time
+        && validText(data, 'summary', 10000, true)
+        && data.skills is list
+        && data.skills.size() <= 50
+        && data.strengths is list
+        && data.strengths.size() <= 50
+        && data.gaps is list
+        && data.gaps.size() <= 50
+        && data.matchScore is int
+        && data.matchScore >= 0
+        && data.matchScore <= 100;
+    }
+
+    // Client-created insights follow the same unverified trust boundary.
+    function validInsight(data) {
+      return hasFields(
+          data,
+          ['model', 'promptVersion', 'sourceFingerprint', 'generatedAt', 'summary', 'verificationStatus'],
+          ['model', 'promptVersion', 'sourceFingerprint', 'generatedAt', 'summary', 'metrics', 'verificationStatus']
+        )
+        && data.verificationStatus == 'unverified'
+        && validText(data, 'model', 120, false)
+        && validText(data, 'promptVersion', 120, false)
+        && validText(data, 'sourceFingerprint', 128, false)
+        && data.generatedAt is timestamp
+        && data.generatedAt == request.time
+        && validText(data, 'summary', 10000, true)
+        && (!('metrics' in data) || data.metrics is map);
+    }
+
+    match /users/{uid} {
+      allow get: if owns(uid);
+      allow list: if false;
+      allow create: if owns(uid)
+        && validProfile(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if owns(uid)
+        && validProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['displayName', 'email', 'photoURL', 'updatedAt']);
+      allow delete: if false;
+
+      match /applications/{applicationId} {
+        allow get, list: if owns(uid);
+        allow create: if owns(uid)
+          && validApplication(request.resource.data, uid)
+          && validInitialActivity(request.resource.data.activity)
+          && createdAndUpdatedAtRequestTime(request.resource.data);
+        allow update: if owns(uid)
+          && validApplication(request.resource.data, uid)
+          && updatedAtRequestTime(request.resource.data, resource.data)
+          && validApplicationActivityUpdate(resource.data, request.resource.data);
+        allow delete: if owns(uid);
+
+        match /analyses/{analysisId} {
+          allow get, list: if owns(uid)
+            && exists(/databases/$(database)/documents/users/$(uid)/applications/$(applicationId));
+          allow create: if owns(uid)
+            && exists(/databases/$(database)/documents/users/$(uid)/applications/$(applicationId))
+            && validAnalysis(request.resource.data);
+          allow update: if false;
+          allow delete: if owns(uid);
+        }
+      }
+
+      match /interviews/{interviewId} {
+        allow get, list: if owns(uid);
+        allow create: if owns(uid)
+          && validInterview(request.resource.data, uid)
+          && createdAndUpdatedAtRequestTime(request.resource.data);
+        allow update: if owns(uid)
+          && validInterview(request.resource.data, uid)
+          && request.resource.data.applicationId == resource.data.applicationId
+          && updatedAtRequestTime(request.resource.data, resource.data);
+        allow delete: if owns(uid);
+      }
+
+      match /followups/{followupId} {
+        allow get, list: if owns(uid);
+        allow create: if owns(uid)
+          && validFollowup(request.resource.data, uid)
+          && createdAndUpdatedAtRequestTime(request.resource.data);
+        allow update: if owns(uid)
+          && validFollowup(request.resource.data, uid)
+          && request.resource.data.applicationId == resource.data.applicationId
+          && updatedAtRequestTime(request.resource.data, resource.data);
+        allow delete: if owns(uid);
+      }
+
+      match /resumes/{resumeId} {
+        allow get, list: if owns(uid);
+        allow create: if owns(uid)
+          && validResume(request.resource.data)
+          && createdAndUpdatedAtRequestTime(request.resource.data);
+        allow update: if owns(uid)
+          && validResume(request.resource.data)
+          && updatedAtRequestTime(request.resource.data, resource.data);
+        allow delete: if owns(uid);
+      }
+
+      match /insights/{insightId} {
+        allow get, list: if owns(uid);
+        allow create: if owns(uid) && validInsight(request.resource.data);
+        allow update: if false;
+        allow delete: if owns(uid);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
