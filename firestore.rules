@@ -22,10 +22,13 @@ service cloud.firestore {
         || (data[field] is string && data[field].size() <= maxLength);
     }
 
-    function matchesVerifiedAuthEmail(email) {
-      return !('email_verified' in request.auth.token)
-        || request.auth.token.email_verified != true
-        || ('email' in request.auth.token && email == request.auth.token.email);
+    function matchesAuthEmail(email) {
+      return request.auth != null
+        && (('email' in request.auth.token && request.auth.token.email is string)
+          ? email == request.auth.token.email
+          : !('email' in request.auth.token)
+            && (!('email_verified' in request.auth.token)
+              || request.auth.token.email_verified != true));
     }
 
     function createdAndUpdatedAtRequestTime(data) {
@@ -42,16 +45,68 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
 
+    function validStringValue(value, maxLength, allowEmpty) {
+      return value is string
+        && value.size() <= maxLength
+        && (allowEmpty || value.size() > 0);
+    }
+
+    function validOptionalString(data, field, maxLength, allowEmpty) {
+      return !(field in data)
+        || validStringValue(data[field], maxLength, allowEmpty);
+    }
+
+    function validStringArray(data, field, maxItems) {
+      return field in data
+        ? data[field] is list && data[field].size() <= maxItems
+        : true;
+    }
+
+    function validMapArray(data, field) {
+      return field in data
+        ? data[field] is list
+          && data[field].size() <= 5
+        : true;
+    }
+
     function validProfile(data) {
       return hasFields(
           data,
           ['displayName', 'email', 'createdAt', 'updatedAt'],
-          ['displayName', 'email', 'photoURL', 'createdAt', 'updatedAt']
+          [
+            'displayName', 'email', 'photoURL', 'phoneNumber', 'college', 'degree',
+            'branch', 'graduationYear', 'academicYear', 'technicalSkills',
+            'programmingLanguages', 'tools', 'experience', 'projects',
+            'certifications', 'preferredRoles', 'preferredLocations',
+            'professionalSummary', 'linkedinURL', 'githubURL', 'portfolioURL',
+            'createdAt', 'updatedAt'
+          ]
         )
         && validText(data, 'displayName', 120, false)
         && validText(data, 'email', 254, false)
-        && matchesVerifiedAuthEmail(data.email)
+        && matchesAuthEmail(data.email)
         && validOptionalText(data, 'photoURL', 2048)
+        && validOptionalString(data, 'phoneNumber', 32, true)
+        && validOptionalString(data, 'college', 200, true)
+        && validOptionalString(data, 'degree', 120, true)
+        && validOptionalString(data, 'branch', 120, true)
+        && (!('graduationYear' in data)
+          || (data.graduationYear is int
+            && data.graduationYear >= 1900
+            && data.graduationYear <= 2200))
+        && validOptionalString(data, 'academicYear', 80, true)
+        && validStringArray(data, 'technicalSkills', 5)
+        && validStringArray(data, 'programmingLanguages', 5)
+        && validStringArray(data, 'tools', 5)
+        && validMapArray(data, 'experience')
+        && validMapArray(data, 'projects')
+        && validMapArray(data, 'certifications')
+        && validStringArray(data, 'preferredRoles', 5)
+        && validStringArray(data, 'preferredLocations', 5)
+        && validOptionalString(data, 'professionalSummary', 5000, true)
+        && validOptionalString(data, 'linkedinURL', 2048, true)
+        && validOptionalString(data, 'githubURL', 2048, true)
+        && validOptionalString(data, 'portfolioURL', 2048, true)
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -250,14 +305,19 @@ service cloud.firestore {
       allow list: if false;
       allow create: if owns(uid)
         && validProfile(request.resource.data)
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && createdAndUpdatedAtRequestTime(request.resource.data);
       allow update: if owns(uid)
         && validProfile(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.updatedAt == request.time
+        && updatedAtRequestTime(request.resource.data, resource.data)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'email', 'photoURL', 'updatedAt']);
+          .hasOnly([
+            'displayName', 'email', 'photoURL', 'phoneNumber', 'college', 'degree',
+            'branch', 'graduationYear', 'academicYear', 'technicalSkills',
+            'programmingLanguages', 'tools', 'experience', 'projects',
+            'certifications', 'preferredRoles', 'preferredLocations',
+            'professionalSummary', 'linkedinURL', 'githubURL', 'portfolioURL',
+            'updatedAt'
+          ]);
       allow delete: if false;
 
       match /applications/{applicationId} {

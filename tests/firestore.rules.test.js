@@ -8,6 +8,7 @@ import {
 } from '@firebase/rules-unit-testing'
 import {
   collection,
+  deleteField,
   deleteDoc,
   doc,
   getDoc,
@@ -23,11 +24,81 @@ const ownerUid = 'owner-user'
 const otherUid = 'other-user'
 const applicationId = 'application-1'
 const testDate = Timestamp.fromDate(new Date('2026-01-15T12:00:00.000Z'))
+const ownerEmail = 'owner@example.com'
 
 let testEnvironment
 
 function applicationReference(firestore, uid = ownerUid, id = applicationId) {
   return doc(firestore, 'users', uid, 'applications', id)
+}
+
+function profileReference(firestore, uid = ownerUid) {
+  return doc(firestore, 'users', uid)
+}
+
+function profileFirestore(uid = ownerUid, email = ownerEmail) {
+  return testEnvironment.authenticatedContext(uid, {
+    email,
+    email_verified: true,
+  }).firestore()
+}
+
+function profileFields(overrides = {}) {
+  return {
+    displayName: 'Ada Lovelace',
+    email: ownerEmail,
+    photoURL: null,
+    phoneNumber: '+1 555 0100',
+    college: 'Northstar University',
+    degree: 'B.S. Computer Science',
+    branch: 'Software Engineering',
+    graduationYear: 2027,
+    academicYear: 'Third year',
+    technicalSkills: ['React', 'Firebase'],
+    programmingLanguages: ['JavaScript', 'Python'],
+    tools: ['Git', 'Figma'],
+    experience: [{
+      title: 'Software Engineering Intern',
+      company: 'Northstar Labs',
+      location: 'Remote',
+      startDate: '2025-06',
+      endDate: '2025-08',
+      description: 'Built product features.',
+    }],
+    projects: [{
+      name: 'ApplyTrack',
+      url: 'https://example.com',
+      description: 'A career application tracker.',
+    }],
+    certifications: [{
+      name: 'Cloud Fundamentals',
+      issuer: 'Northstar Academy',
+      issueDate: '2025-04',
+      credentialURL: 'https://example.com/certificate',
+    }],
+    preferredRoles: ['Frontend Engineer'],
+    preferredLocations: ['Remote'],
+    professionalSummary: 'Software engineering student interested in web development.',
+    linkedinURL: 'https://linkedin.com/in/ada',
+    githubURL: 'https://github.com/ada',
+    portfolioURL: 'https://ada.example.com',
+    ...overrides,
+  }
+}
+
+function validProfile(overrides = {}) {
+  return {
+    ...profileFields(overrides),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }
+}
+
+async function createOwnerProfile(overrides = {}) {
+  const firestore = profileFirestore()
+  const reference = profileReference(firestore)
+  await assertSucceeds(setDoc(reference, validProfile(overrides)))
+  return { firestore, reference }
 }
 
 function validApplication(overrides = {}) {
@@ -103,6 +174,160 @@ after(async () => {
 
 beforeEach(async () => {
   await testEnvironment.clearFirestore()
+})
+
+test('an authenticated user can create their own valid Career Profile', async () => {
+  const firestore = profileFirestore()
+  const reference = profileReference(firestore)
+
+  await assertSucceeds(setDoc(reference, validProfile()))
+  const created = await assertSucceeds(getDoc(reference))
+
+  assert.equal(created.data().displayName, 'Ada Lovelace')
+  assert.equal(created.data().email, ownerEmail)
+  assert.ok(created.data().createdAt instanceof Timestamp)
+  assert.ok(created.data().updatedAt instanceof Timestamp)
+})
+
+test('an authenticated user can read their own Career Profile', async () => {
+  const { reference } = await createOwnerProfile()
+
+  const profile = await assertSucceeds(getDoc(reference))
+  assert.equal(profile.data().college, 'Northstar University')
+})
+
+test('a user cannot read or modify another user Career Profile', async () => {
+  await createOwnerProfile()
+  const otherFirestore = profileFirestore(otherUid, 'other@example.com')
+  const ownerReference = profileReference(otherFirestore, ownerUid)
+
+  await assertFails(getDoc(ownerReference))
+  await assertFails(updateDoc(ownerReference, {
+    phoneNumber: '+1 555 0199',
+    updatedAt: serverTimestamp(),
+  }))
+  await assertFails(setDoc(
+    profileReference(otherFirestore, ownerUid),
+    validProfile(),
+  ))
+})
+
+test('an authenticated user can update their complete Career Profile', async () => {
+  const { reference } = await createOwnerProfile()
+  const original = (await getDoc(reference)).data()
+
+  await assertSucceeds(updateDoc(reference, {
+    ...profileFields({
+      displayName: 'Ada Byron',
+      phoneNumber: '+1 555 0111',
+      college: 'Updated University',
+      degree: 'M.S. Computer Science',
+      branch: 'Machine Learning',
+      graduationYear: 2028,
+      academicYear: 'Graduate year one',
+      technicalSkills: ['React', 'Firebase', 'Accessibility'],
+      programmingLanguages: ['JavaScript', 'Python', 'Go'],
+      tools: ['Git', 'Figma', 'VS Code'],
+      experience: [{
+        title: 'Software Engineer',
+        company: 'Example Company',
+        location: 'New York',
+        startDate: '2025-06',
+        endDate: '',
+        description: 'Developed web services.',
+      }],
+      projects: [{
+        name: 'Portfolio',
+        url: 'https://ada.example.com',
+        description: 'Personal portfolio.',
+      }],
+      certifications: [{
+        name: 'Web Accessibility',
+        issuer: 'Example Institute',
+        issueDate: '2026-01',
+        credentialURL: 'https://example.com/credential',
+      }],
+      preferredRoles: ['Software Engineer', 'Frontend Engineer'],
+      preferredLocations: ['Remote', 'New York'],
+      professionalSummary: 'Updated professional summary.',
+      linkedinURL: 'https://linkedin.com/in/ada-byron',
+      githubURL: 'https://github.com/ada-byron',
+      portfolioURL: 'https://ada-byron.example.com',
+    }),
+    updatedAt: serverTimestamp(),
+  }))
+
+  const updated = (await getDoc(reference)).data()
+  assert.equal(updated.displayName, 'Ada Byron')
+  assert.equal(updated.graduationYear, 2028)
+  assert.equal(updated.createdAt.toMillis(), original.createdAt.toMillis())
+})
+
+test('an authenticated user can partially update their Career Profile', async () => {
+  const { reference } = await createOwnerProfile()
+  const original = (await getDoc(reference)).data()
+
+  await assertSucceeds(updateDoc(reference, {
+    phoneNumber: '+1 555 0122',
+    updatedAt: serverTimestamp(),
+  }))
+
+  const updated = (await getDoc(reference)).data()
+  assert.equal(updated.phoneNumber, '+1 555 0122')
+  assert.equal(updated.college, original.college)
+  assert.equal(updated.createdAt.toMillis(), original.createdAt.toMillis())
+})
+
+test('clearing graduationYear is permitted', async () => {
+  const { reference } = await createOwnerProfile()
+
+  await assertSucceeds(updateDoc(reference, {
+    graduationYear: deleteField(),
+    updatedAt: serverTimestamp(),
+  }))
+
+  assert.equal('graduationYear' in (await getDoc(reference)).data(), false)
+})
+
+test('changing createdAt is rejected', async () => {
+  const { reference } = await createOwnerProfile()
+  const original = (await getDoc(reference)).data()
+
+  await assertFails(updateDoc(reference, {
+    createdAt: Timestamp.fromMillis(original.createdAt.toMillis() + 1),
+    updatedAt: serverTimestamp(),
+  }))
+})
+
+test('a verified Auth email must match the Career Profile email', async () => {
+  const firestore = profileFirestore(ownerUid, ownerEmail)
+
+  await assertFails(setDoc(
+    profileReference(firestore),
+    validProfile({ email: 'different@example.com' }),
+  ))
+})
+
+test('unexpected profile fields and invalid field types are rejected', async () => {
+  const firestore = profileFirestore()
+  const reference = profileReference(firestore)
+
+  await assertFails(setDoc(reference, validProfile({ isAdmin: true })))
+  await assertFails(setDoc(reference, validProfile({ graduationYear: 2026.5 })))
+  await assertFails(setDoc(reference, validProfile({ technicalSkills: 'React' })))
+})
+
+test('unauthenticated users cannot read or write Career Profiles', async () => {
+  await createOwnerProfile()
+  const anonymousFirestore = testEnvironment.unauthenticatedContext().firestore()
+  const reference = profileReference(anonymousFirestore)
+
+  await assertFails(getDoc(reference))
+  await assertFails(updateDoc(reference, {
+    phoneNumber: '+1 555 0199',
+    updatedAt: serverTimestamp(),
+  }))
+  await assertFails(setDoc(reference, validProfile()))
 })
 
 test('unauthenticated users cannot read or write applications', async () => {

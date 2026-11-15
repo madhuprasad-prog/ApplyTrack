@@ -6,6 +6,13 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import PageHeader from '../components/PageHeader.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { formatDate, relativeDay } from '../utils/format.js'
+import useAuth from '../hooks/useAuth.js'
+
+function getGreeting(hour) {
+  if (hour >= 5 && hour < 12) return 'Good morning'
+  if (hour >= 12 && hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 function ActivityTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
@@ -14,7 +21,12 @@ function ActivityTooltip({ active, payload, label }) {
 
 export default function Dashboard() {
   const { applications, interviews, followups } = useOutletContext()
+  const { user } = useAuth()
   const [today] = useState(() => startOfDay(new Date()))
+  const displayName = user?.displayName?.trim()
+  const emailPrefix = user?.email?.split('@')[0]?.trim()
+  const greetingName = displayName || emailPrefix || 'there'
+  const [greeting] = useState(() => getGreeting(new Date().getHours()))
   const weekStart = subDays(today, 6)
   const chartData = useMemo(() => eachDayOfInterval({ start: weekStart, end: today }).map((day) => ({
     day: format(day, 'EEE'),
@@ -31,7 +43,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageHeader eyebrow="YOUR JOB SEARCH" title="Good afternoon, Sarah" description="Here’s what’s happening with your job search." action={<Link className="button button-primary" to="/applications"><Plus size={16} /> Add application</Link>} />
+      <PageHeader eyebrow="YOUR JOB SEARCH" title={`${greeting}, ${greetingName}`} description="Here’s what’s happening with your job search." action={<Link className="button button-primary" to="/applications"><Plus size={16} /> Add application</Link>} />
       <section className="metric-grid" aria-label="Application statistics">
         {metrics.map(({ label, value, icon: Icon, tone, detail, trend, down }) => <article className="metric-card" key={label}><div className="metric-top"><span className={`metric-icon ${tone}`}><Icon size={18} /></span>{trend && <span className={`metric-trend${down ? ' negative' : ''}`}>{down ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}{trend}</span>}</div><p>{label}</p><div className="metric-bottom"><strong>{value}</strong><span>{detail}</span></div></article>)}
       </section>

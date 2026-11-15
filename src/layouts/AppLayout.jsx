@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, Bell, BriefcaseBusiness, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, Sparkles, StickyNote, X } from 'lucide-react'
+import { Activity, Bell, BriefcaseBusiness, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, Sparkles, StickyNote, UserRound, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ApplicationForm from '../components/ApplicationForm.jsx'
 import Modal from '../components/Modal.jsx'
 import { getAuthErrorMessage, logout } from '../firebase/authService.js'
 import useAuth from '../hooks/useAuth.js'
+import { initials } from '../utils/format.js'
 
 const mainLinks = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -15,13 +16,10 @@ const mainLinks = [
 ]
 const manageLinks = [
   { to: '/resumes', label: 'Resume vault', icon: Settings2 },
+  { to: '/profile', label: 'Career profile', icon: UserRound },
   { to: '/analytics', label: 'Analytics', icon: Activity },
 ]
-const pageNames = { '/': 'Overview', '/applications': 'Applications', '/interviews': 'Interviews', '/follow-ups': 'Follow-ups', '/resumes': 'Resume vault', '/analytics': 'Analytics' }
-
-function getInitials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'U'
-}
+const pageNames = { '/': 'Overview', '/applications': 'Applications', '/interviews': 'Interviews', '/follow-ups': 'Follow-ups', '/resumes': 'Resume vault', '/profile': 'Career profile', '/analytics': 'Analytics' }
 
 export default function AppLayout({ app }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -33,8 +31,10 @@ export default function AppLayout({ app }) {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const accountName = user.displayName || user.email?.split('@')[0] || 'ApplyTrack user'
-  const accountEmail = user.email || 'Signed in with Google'
+  const displayName = user?.displayName?.trim()
+  const emailPrefix = user?.email?.split('@')[0]?.trim()
+  const accountName = displayName || emailPrefix || 'there'
+  const accountEmail = user?.email || 'Signed in with Google'
   const pageName = location.pathname.startsWith('/applications/') ? 'Application details' : pageNames[location.pathname] || 'Overview'
   useEffect(() => {
     const handler = () => setAddOpen(true)
@@ -78,7 +78,7 @@ export default function AppLayout({ app }) {
           <button className="sidebar-collapse icon-button" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button>
           <button className="mobile-close icon-button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X size={18} /></button>
         </div>
-        <div className="workspace-switch"><span className="workspace-avatar">S</span>{!collapsed && <><span className="workspace-name">Sarah's workspace<small>Free plan</small></span><ChevronDown size={15} /></>}</div>
+        <div className="workspace-switch"><span className="workspace-avatar">{initials(accountName)}</span>{!collapsed && <><span className="workspace-name">{accountName}'s Workspace<small>Free plan</small></span><ChevronDown size={15} /></>}</div>
         <p className="nav-caption">{!collapsed && 'WORKSPACE'}</p>
         <nav className="nav-list" aria-label="Main navigation">
           {mainLinks.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} title={label} aria-label={label} onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}><Icon size={18} /><span>{label}</span>{label === 'Follow-ups' && !collapsed && <i className="nav-count">{app.followups.filter((item) => !item.completed).length}</i>}</NavLink>)}
@@ -90,8 +90,8 @@ export default function AppLayout({ app }) {
         {!collapsed && <div className="sidebar-tip"><div className="tip-icon"><Sparkles size={16} /></div><strong>Small steps add up</strong><p>You’re building momentum. Keep your applications moving.</p><div className="tip-progress"><span /></div><small>{app.applications.length} applications tracked</small></div>}
         <div className="sidebar-bottom">
           <a className="nav-link" href="mailto:hello@applytrack.app" title="Help & support" aria-label="Help & support"><CircleHelp size={18} /><span>Help & support</span></a>
-          <div className="sidebar-user"><button type="button" className="user-avatar user-avatar-trigger" aria-label="Open account menu" aria-expanded={profileOpen} title={accountName} onClick={() => setProfileOpen(!profileOpen)}>{getInitials(user.displayName || user.email || 'User')}</button>{!collapsed && <div className="user-meta"><strong>{accountName}</strong><small>{accountEmail}</small></div>}{!collapsed && <button aria-label="Open profile menu" aria-expanded={profileOpen} className="profile-more icon-button" onClick={() => setProfileOpen(!profileOpen)}><ChevronDown size={16} /></button>}</div>
-          {profileOpen && <div className="profile-popover"><strong>{accountName}</strong><span>{accountEmail}</span><button onClick={() => { setProfileOpen(false); toast('Profile settings are coming soon in this frontend demo.') }}>Profile settings</button><button className="profile-sign-out" onClick={handleSignOut} disabled={signingOut}><LogOut size={14} />{signingOut ? 'Signing out…' : 'Sign out'}</button></div>}
+          <div className="sidebar-user"><button type="button" className="user-avatar user-avatar-trigger" aria-label="Open account menu" aria-expanded={profileOpen} title={accountName} onClick={() => setProfileOpen(!profileOpen)}>{initials(accountName)}</button>{!collapsed && <div className="user-meta"><strong>{accountName}</strong><small>{accountEmail}</small></div>}{!collapsed && <button aria-label="Open profile menu" aria-expanded={profileOpen} className="profile-more icon-button" onClick={() => setProfileOpen(!profileOpen)}><ChevronDown size={16} /></button>}</div>
+          {profileOpen && <div className="profile-popover"><strong>{accountName}</strong><span>{accountEmail}</span><button onClick={() => { setProfileOpen(false); navigate('/profile') }}>Career profile</button><button className="profile-sign-out" onClick={handleSignOut} disabled={signingOut}><LogOut size={14} />{signingOut ? 'Signing out…' : 'Sign out'}</button></div>}
         </div>
       </aside>
       <main className="main-panel">

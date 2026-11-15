@@ -15,6 +15,7 @@ const Interviews = lazy(() => import('./pages/Interviews.jsx'))
 const Followups = lazy(() => import('./pages/Followups.jsx'))
 const Resumes = lazy(() => import('./pages/Resumes.jsx'))
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
+const CareerProfile = lazy(() => import('./pages/CareerProfile.jsx'))
 
 function WorkspaceLayout() {
   const app = useApplyTrack()
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="interviews" element={<Interviews />} />
               <Route path="follow-ups" element={<Followups />} />
               <Route path="resumes" element={<Resumes />} />
+              <Route path="profile" element={<CareerProfile />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
