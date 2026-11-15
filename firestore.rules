@@ -79,110 +79,14 @@ service cloud.firestore {
       return activity is list
         && activity.size() == 1
         && validActivityEntry(activity[0])
-        && activity[0].type != 'status_changed';
+        && activity[0].type == 'Application added';
     }
 
     function preservesActivityPrefix(oldActivity, newActivity) {
-      return (oldActivity.size() <= 0 || newActivity[0] == oldActivity[0])
-        && (oldActivity.size() <= 1 || newActivity[1] == oldActivity[1])
-        && (oldActivity.size() <= 2 || newActivity[2] == oldActivity[2])
-        && (oldActivity.size() <= 3 || newActivity[3] == oldActivity[3])
-        && (oldActivity.size() <= 4 || newActivity[4] == oldActivity[4])
-        && (oldActivity.size() <= 5 || newActivity[5] == oldActivity[5])
-        && (oldActivity.size() <= 6 || newActivity[6] == oldActivity[6])
-        && (oldActivity.size() <= 7 || newActivity[7] == oldActivity[7])
-        && (oldActivity.size() <= 8 || newActivity[8] == oldActivity[8])
-        && (oldActivity.size() <= 9 || newActivity[9] == oldActivity[9])
-        && (oldActivity.size() <= 10 || newActivity[10] == oldActivity[10])
-        && (oldActivity.size() <= 11 || newActivity[11] == oldActivity[11])
-        && (oldActivity.size() <= 12 || newActivity[12] == oldActivity[12])
-        && (oldActivity.size() <= 13 || newActivity[13] == oldActivity[13])
-        && (oldActivity.size() <= 14 || newActivity[14] == oldActivity[14])
-        && (oldActivity.size() <= 15 || newActivity[15] == oldActivity[15])
-        && (oldActivity.size() <= 16 || newActivity[16] == oldActivity[16])
-        && (oldActivity.size() <= 17 || newActivity[17] == oldActivity[17])
-        && (oldActivity.size() <= 18 || newActivity[18] == oldActivity[18])
-        && (oldActivity.size() <= 19 || newActivity[19] == oldActivity[19])
-        && (oldActivity.size() <= 20 || newActivity[20] == oldActivity[20])
-        && (oldActivity.size() <= 21 || newActivity[21] == oldActivity[21])
-        && (oldActivity.size() <= 22 || newActivity[22] == oldActivity[22])
-        && (oldActivity.size() <= 23 || newActivity[23] == oldActivity[23])
-        && (oldActivity.size() <= 24 || newActivity[24] == oldActivity[24])
-        && (oldActivity.size() <= 25 || newActivity[25] == oldActivity[25])
-        && (oldActivity.size() <= 26 || newActivity[26] == oldActivity[26])
-        && (oldActivity.size() <= 27 || newActivity[27] == oldActivity[27])
-        && (oldActivity.size() <= 28 || newActivity[28] == oldActivity[28])
-        && (oldActivity.size() <= 29 || newActivity[29] == oldActivity[29])
-        && (oldActivity.size() <= 30 || newActivity[30] == oldActivity[30])
-        && (oldActivity.size() <= 31 || newActivity[31] == oldActivity[31])
-        && (oldActivity.size() <= 32 || newActivity[32] == oldActivity[32])
-        && (oldActivity.size() <= 33 || newActivity[33] == oldActivity[33])
-        && (oldActivity.size() <= 34 || newActivity[34] == oldActivity[34])
-        && (oldActivity.size() <= 35 || newActivity[35] == oldActivity[35])
-        && (oldActivity.size() <= 36 || newActivity[36] == oldActivity[36])
-        && (oldActivity.size() <= 37 || newActivity[37] == oldActivity[37])
-        && (oldActivity.size() <= 38 || newActivity[38] == oldActivity[38])
-        && (oldActivity.size() <= 39 || newActivity[39] == oldActivity[39])
-        && (oldActivity.size() <= 40 || newActivity[40] == oldActivity[40])
-        && (oldActivity.size() <= 41 || newActivity[41] == oldActivity[41])
-        && (oldActivity.size() <= 42 || newActivity[42] == oldActivity[42])
-        && (oldActivity.size() <= 43 || newActivity[43] == oldActivity[43])
-        && (oldActivity.size() <= 44 || newActivity[44] == oldActivity[44])
-        && (oldActivity.size() <= 45 || newActivity[45] == oldActivity[45])
-        && (oldActivity.size() <= 46 || newActivity[46] == oldActivity[46])
-        && (oldActivity.size() <= 47 || newActivity[47] == oldActivity[47])
-        && (oldActivity.size() <= 48 || newActivity[48] == oldActivity[48])
-        && (oldActivity.size() <= 49 || newActivity[49] == oldActivity[49])
-        && (oldActivity.size() <= 50 || newActivity[50] == oldActivity[50])
-        && (oldActivity.size() <= 51 || newActivity[51] == oldActivity[51])
-        && (oldActivity.size() <= 52 || newActivity[52] == oldActivity[52])
-        && (oldActivity.size() <= 53 || newActivity[53] == oldActivity[53])
-        && (oldActivity.size() <= 54 || newActivity[54] == oldActivity[54])
-        && (oldActivity.size() <= 55 || newActivity[55] == oldActivity[55])
-        && (oldActivity.size() <= 56 || newActivity[56] == oldActivity[56])
-        && (oldActivity.size() <= 57 || newActivity[57] == oldActivity[57])
-        && (oldActivity.size() <= 58 || newActivity[58] == oldActivity[58])
-        && (oldActivity.size() <= 59 || newActivity[59] == oldActivity[59])
-        && (oldActivity.size() <= 60 || newActivity[60] == oldActivity[60])
-        && (oldActivity.size() <= 61 || newActivity[61] == oldActivity[61])
-        && (oldActivity.size() <= 62 || newActivity[62] == oldActivity[62])
-        && (oldActivity.size() <= 63 || newActivity[63] == oldActivity[63])
-        && (oldActivity.size() <= 64 || newActivity[64] == oldActivity[64])
-        && (oldActivity.size() <= 65 || newActivity[65] == oldActivity[65])
-        && (oldActivity.size() <= 66 || newActivity[66] == oldActivity[66])
-        && (oldActivity.size() <= 67 || newActivity[67] == oldActivity[67])
-        && (oldActivity.size() <= 68 || newActivity[68] == oldActivity[68])
-        && (oldActivity.size() <= 69 || newActivity[69] == oldActivity[69])
-        && (oldActivity.size() <= 70 || newActivity[70] == oldActivity[70])
-        && (oldActivity.size() <= 71 || newActivity[71] == oldActivity[71])
-        && (oldActivity.size() <= 72 || newActivity[72] == oldActivity[72])
-        && (oldActivity.size() <= 73 || newActivity[73] == oldActivity[73])
-        && (oldActivity.size() <= 74 || newActivity[74] == oldActivity[74])
-        && (oldActivity.size() <= 75 || newActivity[75] == oldActivity[75])
-        && (oldActivity.size() <= 76 || newActivity[76] == oldActivity[76])
-        && (oldActivity.size() <= 77 || newActivity[77] == oldActivity[77])
-        && (oldActivity.size() <= 78 || newActivity[78] == oldActivity[78])
-        && (oldActivity.size() <= 79 || newActivity[79] == oldActivity[79])
-        && (oldActivity.size() <= 80 || newActivity[80] == oldActivity[80])
-        && (oldActivity.size() <= 81 || newActivity[81] == oldActivity[81])
-        && (oldActivity.size() <= 82 || newActivity[82] == oldActivity[82])
-        && (oldActivity.size() <= 83 || newActivity[83] == oldActivity[83])
-        && (oldActivity.size() <= 84 || newActivity[84] == oldActivity[84])
-        && (oldActivity.size() <= 85 || newActivity[85] == oldActivity[85])
-        && (oldActivity.size() <= 86 || newActivity[86] == oldActivity[86])
-        && (oldActivity.size() <= 87 || newActivity[87] == oldActivity[87])
-        && (oldActivity.size() <= 88 || newActivity[88] == oldActivity[88])
-        && (oldActivity.size() <= 89 || newActivity[89] == oldActivity[89])
-        && (oldActivity.size() <= 90 || newActivity[90] == oldActivity[90])
-        && (oldActivity.size() <= 91 || newActivity[91] == oldActivity[91])
-        && (oldActivity.size() <= 92 || newActivity[92] == oldActivity[92])
-        && (oldActivity.size() <= 93 || newActivity[93] == oldActivity[93])
-        && (oldActivity.size() <= 94 || newActivity[94] == oldActivity[94])
-        && (oldActivity.size() <= 95 || newActivity[95] == oldActivity[95])
-        && (oldActivity.size() <= 96 || newActivity[96] == oldActivity[96])
-        && (oldActivity.size() <= 97 || newActivity[97] == oldActivity[97])
-        && (oldActivity.size() <= 98 || newActivity[98] == oldActivity[98])
-        && (oldActivity.size() <= 99 || newActivity[99] == oldActivity[99]);
+      return oldActivity is list
+        && newActivity is list
+        && oldActivity.size() <= newActivity.size()
+        && newActivity[0:oldActivity.size()] == oldActivity;
     }
 
     function validResumeReference(uid, resumeId) {
@@ -235,17 +139,13 @@ service cloud.firestore {
         && events[events.size() - 1].toStatus == newData.status;
     }
 
-    function validNonStatusActivityAppend(oldData, newData) {
-      return newData.activity == oldData.activity
-        || (newData.activity.size() == oldData.activity.size() + 1
-          && preservesActivityPrefix(oldData.activity, newData.activity)
-          && validActivityEntry(newData.activity[newData.activity.size() - 1])
-          && newData.activity[newData.activity.size() - 1].type != 'status_changed');
+    function preservesActivityWithoutStatusChange(oldData, newData) {
+      return newData.activity == oldData.activity;
     }
 
     function validApplicationActivityUpdate(oldData, newData) {
       return newData.status == oldData.status
-        ? validNonStatusActivityAppend(oldData, newData)
+        ? preservesActivityWithoutStatusChange(oldData, newData)
         : validStatusChangeEvent(oldData, newData);
     }
 
