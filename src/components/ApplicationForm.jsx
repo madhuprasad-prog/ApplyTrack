@@ -8,7 +8,7 @@ const blankApplication = () => ({
   recruiter: '', recruiterEmail: '', notes: '', resumeId: '',
 })
 
-export default function ApplicationForm({ application, resumes, onCancel, onSave }) {
+export default function ApplicationForm({ application, resumes, onCancel, onSave, saving = false }) {
   const [values, setValues] = useState(() => application
     ? { ...application, appliedAt: format(new Date(application.appliedAt), "yyyy-MM-dd'T'HH:mm") }
     : blankApplication())
@@ -29,9 +29,9 @@ export default function ApplicationForm({ application, resumes, onCancel, onSave
       <label className="field"><span>Status</span><select value={values.status} onChange={update('status')}>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label>
       <label className="field"><span>Recruiter</span><input value={values.recruiter || ''} onChange={update('recruiter')} placeholder="Recruiter name" /></label>
       <label className="field"><span>Recruiter email</span><input type="email" value={values.recruiterEmail || ''} onChange={update('recruiterEmail')} placeholder="name@company.com" /></label>
-      <label className="field field-full"><span>Linked resume</span><select value={values.resumeId || ''} onChange={update('resumeId')}><option value="">No resume linked</option>{resumes.map((resume) => <option value={resume.id} key={resume.id}>{resume.name}</option>)}</select></label>
+      <label className="field field-full"><span>Linked resume</span><select value={values.resumeId || ''} onChange={update('resumeId')}><option value="">No resume linked</option>{resumes.map((resume) => <option value={resume.id} key={resume.id}>{resume.name}</option>)}</select><small className="application-resume-note">Resume vault is still demo-only. Demo resumes cannot be linked to Firestore applications.</small></label>
       <label className="field field-full"><span>Notes</span><textarea rows="3" maxLength="1000" value={values.notes || ''} onChange={update('notes')} placeholder="Add a note to remember..." /></label>
-      <div className="form-actions field-full"><button type="button" className="button button-secondary" onClick={onCancel}>Cancel</button><button type="submit" className="button button-primary">{application ? 'Save changes' : 'Add application'}</button></div>
+      <div className="form-actions field-full"><button type="button" className="button button-secondary" onClick={onCancel} disabled={saving}>Cancel</button><button type="submit" className="button button-primary" disabled={saving}>{saving ? 'Saving…' : application ? 'Save changes' : 'Add application'}</button></div>
     </form>
   )
 }

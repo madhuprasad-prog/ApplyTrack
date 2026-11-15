@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, ExternalLink, Mail, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
-import toast from 'react-hot-toast'
 import ApplicationForm from '../components/ApplicationForm.jsx'
 import Modal from '../components/Modal.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
@@ -13,18 +12,36 @@ export default function ApplicationDetails() {
   const navigate = useNavigate()
   const app = useOutletContext()
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const application = app.applications.find((item) => item.id === id)
-  if (!application) return <div className="empty-page"><span className="empty-icon"><BriefcaseBusiness size={22} /></span><h2>Application not found</h2><p>It may have been removed from your demo workspace.</p><Link className="button button-primary" to="/applications">Back to applications</Link></div>
+  if (app.applicationsLoading && !application) return <div className="empty-page" role="status"><span className="empty-icon"><BriefcaseBusiness size={22} /></span><h2>Loading application</h2><p>Fetching your application details…</p></div>
+  if (app.applicationsError && !application) return <div className="empty-page" role="alert"><span className="empty-icon"><BriefcaseBusiness size={22} /></span><h2>Could not load application</h2><p>{app.applicationsError}</p><button className="button button-primary" onClick={() => { void app.refreshApplications() }}>Try again</button></div>
+  if (!application) return <div className="empty-page"><span className="empty-icon"><BriefcaseBusiness size={22} /></span><h2>Application not found</h2><p>It may have been removed from your account.</p><Link className="button button-primary" to="/applications">Back to applications</Link></div>
 
   const resume = app.resumes.find((item) => item.id === application.resumeId)
   const interviews = app.interviews.filter((item) => item.applicationId === id).sort((a, b) => b.date.localeCompare(a.date))
   const activity = (application.activity?.length ? [...application.activity] : [{ type: 'Application submitted', date: application.appliedAt }])
     .sort((a, b) => b.date.localeCompare(a.date))
 
-  function remove() {
+  async function remove() {
     if (window.confirm(`Delete your ${application.company} application?`)) {
-      app.removeApplication(id)
-      navigate('/applications')
+      const removed = await app.removeApplication(id)
+      if (removed) navigate('/applications')
+    }
+  }
+
+  function editNotes() {
+    const notes = window.prompt('Update your notes', application.notes || '')
+    if (notes !== null) void app.updateApplication(id, { notes })
+  }
+
+  async function save(values) {
+    setSaving(true)
+    try {
+      const saved = await app.updateApplication(id, values)
+      if (saved) setEditing(false)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -35,7 +52,7 @@ export default function ApplicationDetails() {
       <div className="details-grid">
         <div className="details-main">
           <section className="panel detail-section"><div className="section-title"><h2>Application activity</h2><span>{activity.length} updates</span></div><div className="timeline">{activity.map((event, index) => <div className={`timeline-item${index === 0 ? ' timeline-current' : ''}`} key={`${event.type}-${event.date}-${index}`}><span className="timeline-marker" /><div><strong>{event.type}</strong><p>{formatDate(event.date, 'MMM d, yyyy · h:mm a')}<span> · {formatDistanceToNow(parseISO(event.date), { addSuffix: true })}</span></p></div></div>)}</div></section>
-          <section className="panel detail-section"><div className="section-title"><h2>Notes</h2><button className="quiet-button" onClick={() => { const notes = window.prompt('Update your notes', application.notes || ''); if (notes !== null) { app.updateApplication(id, { notes }); toast.success('Notes saved') } }}>Edit notes</button></div>{application.notes ? <p className="notes-copy">{application.notes}</p> : <div className="inline-empty">No notes yet. Add a note to remember important details.</div>}</section>
+          <section className="panel detail-section"><div className="section-title"><h2>Notes</h2><button className="quiet-button" onClick={editNotes}>Edit notes</button></div>{application.notes ? <p className="notes-copy">{application.notes}</p> : <div className="inline-empty">No notes yet. Add a note to remember important details.</div>}</section>
           <section className="panel detail-section"><div className="section-title"><h2>Interviews</h2><Link to="/interviews" className="quiet-button">Manage interviews</Link></div>{interviews.length ? interviews.map((interview) => <div className="detail-interview" key={interview.id}><span className="interview-icon"><CalendarDays size={17} /></span><div><strong>{interview.round}</strong><p>{formatDate(interview.date, 'EEEE, MMM d · h:mm a')} · {interview.mode}</p></div>{interview.link && <a className="icon-button" href={interview.link} target="_blank" rel="noreferrer" aria-label="Open meeting link"><ExternalLink size={16} /></a>}</div>) : <div className="inline-empty">No interviews scheduled yet.</div>}</section>
         </div>
         <aside className="details-aside">
@@ -44,7 +61,7 @@ export default function ApplicationDetails() {
           <section className="panel detail-section next-step-card"><div className="next-step-icon"><Plus size={17} /></div><h3>Keep things moving</h3><p>Set a reminder to follow up with {application.company}.</p><Link to="/follow-ups" className="button button-secondary button-full">View follow-ups</Link></section>
         </aside>
       </div>
-      {editing && <Modal title="Edit application" description="Update your opportunity details." wide onClose={() => setEditing(false)}><ApplicationForm application={application} resumes={app.resumes} onCancel={() => setEditing(false)} onSave={(values) => { app.updateApplication(id, values); setEditing(false) }} /></Modal>}
+      {editing && <Modal title="Edit application" description="Update your opportunity details." wide onClose={() => { if (!saving) setEditing(false) }}><ApplicationForm application={application} resumes={app.resumes} saving={saving} onCancel={() => setEditing(false)} onSave={save} /></Modal>}
     </>
   )
 }

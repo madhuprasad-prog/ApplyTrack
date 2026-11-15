@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, Bell, BriefcaseBusiness, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, LayoutDashboard, Menu, Plus, Search, Settings2, Sparkles, StickyNote, X } from 'lucide-react'
+import { Activity, Bell, BriefcaseBusiness, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, Sparkles, StickyNote, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ApplicationForm from '../components/ApplicationForm.jsx'
 import Modal from '../components/Modal.jsx'
+import { getAuthErrorMessage, logout } from '../firebase/authService.js'
+import useAuth from '../hooks/useAuth.js'
 
 const mainLinks = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -17,19 +19,54 @@ const manageLinks = [
 ]
 const pageNames = { '/': 'Overview', '/applications': 'Applications', '/interviews': 'Interviews', '/follow-ups': 'Follow-ups', '/resumes': 'Resume vault', '/analytics': 'Analytics' }
 
+function getInitials(name) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'U'
+}
+
 export default function AppLayout({ app }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+  const [savingApplication, setSavingApplication] = useState(false)
+  const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const accountName = user.displayName || user.email?.split('@')[0] || 'ApplyTrack user'
+  const accountEmail = user.email || 'Signed in with Google'
   const pageName = location.pathname.startsWith('/applications/') ? 'Application details' : pageNames[location.pathname] || 'Overview'
   useEffect(() => {
     const handler = () => setAddOpen(true)
     window.addEventListener('applytrack:add-application', handler)
     return () => window.removeEventListener('applytrack:add-application', handler)
   }, [])
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    try {
+      await logout()
+      setProfileOpen(false)
+      toast.success('Signed out')
+    } catch (error) {
+      toast.error(getAuthErrorMessage(error))
+    } finally {
+      setSigningOut(false)
+    }
+  }
+
+  async function saveNewApplication(values) {
+    setSavingApplication(true)
+    try {
+      const saved = await app.addApplication(values)
+      if (saved) {
+        setAddOpen(false)
+        navigate('/applications')
+      }
+    } finally {
+      setSavingApplication(false)
+    }
+  }
 
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
@@ -53,8 +90,8 @@ export default function AppLayout({ app }) {
         {!collapsed && <div className="sidebar-tip"><div className="tip-icon"><Sparkles size={16} /></div><strong>Small steps add up</strong><p>You’re building momentum. Keep your applications moving.</p><div className="tip-progress"><span /></div><small>{app.applications.length} applications tracked</small></div>}
         <div className="sidebar-bottom">
           <a className="nav-link" href="mailto:hello@applytrack.app" title="Help & support" aria-label="Help & support"><CircleHelp size={18} /><span>Help & support</span></a>
-          <div className="sidebar-user"><div className="user-avatar">SC</div>{!collapsed && <div className="user-meta"><strong>Sarah Chen</strong><small>Student plan</small></div>}{!collapsed && <button aria-label="Open profile menu" className="profile-more icon-button" onClick={() => setProfileOpen(!profileOpen)}><ChevronDown size={16} /></button>}</div>
-          {profileOpen && <div className="profile-popover"><strong>Sarah Chen</strong><span>sarah.chen@email.com</span><button onClick={() => { setProfileOpen(false); toast('Profile settings are coming soon in this frontend demo.') }}>Profile settings</button></div>}
+          <div className="sidebar-user"><button type="button" className="user-avatar user-avatar-trigger" aria-label="Open account menu" aria-expanded={profileOpen} title={accountName} onClick={() => setProfileOpen(!profileOpen)}>{getInitials(user.displayName || user.email || 'User')}</button>{!collapsed && <div className="user-meta"><strong>{accountName}</strong><small>{accountEmail}</small></div>}{!collapsed && <button aria-label="Open profile menu" aria-expanded={profileOpen} className="profile-more icon-button" onClick={() => setProfileOpen(!profileOpen)}><ChevronDown size={16} /></button>}</div>
+          {profileOpen && <div className="profile-popover"><strong>{accountName}</strong><span>{accountEmail}</span><button onClick={() => { setProfileOpen(false); toast('Profile settings are coming soon in this frontend demo.') }}>Profile settings</button><button className="profile-sign-out" onClick={handleSignOut} disabled={signingOut}><LogOut size={14} />{signingOut ? 'Signing out…' : 'Sign out'}</button></div>}
         </div>
       </aside>
       <main className="main-panel">
@@ -64,7 +101,7 @@ export default function AppLayout({ app }) {
         </header>
         <div className="page-content"><Outlet context={app} /></div>
       </main>
-      {addOpen && <Modal title="Add an application" description="Keep your job search organized in one place." wide onClose={() => setAddOpen(false)}><ApplicationForm resumes={app.resumes} onCancel={() => setAddOpen(false)} onSave={(values) => { app.addApplication(values); setAddOpen(false); navigate('/applications') }} /></Modal>}
+      {addOpen && <Modal title="Add an application" description="Keep your job search organized in one place." wide onClose={() => { if (!savingApplication) setAddOpen(false) }}><ApplicationForm resumes={app.resumes} saving={savingApplication} onCancel={() => setAddOpen(false)} onSave={saveNewApplication} /></Modal>}
     </div>
   )
 }
